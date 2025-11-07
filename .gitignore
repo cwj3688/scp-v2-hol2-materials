@@ -1,0 +1,19 @@
+# ------------------------------------------------------------
+# PDF conversion outputs and intermediates
+# ------------------------------------------------------------
+*.pdf
+
+# Common export/build directories used by PDF tooling
+/pdf/
+/css/
+
+# ------------------------------------------------------------
+# Editor/IDE settings
+# ------------------------------------------------------------
+.vscode/
+.idea/
+*.code-workspace
+
+# OS-specific noise
+.DS_Store
+Thumbs.db

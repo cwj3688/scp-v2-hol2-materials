@@ -1,1 +1,1 @@
-# Samsung Cloud Platform Hands-on Lab I - IaaS
+# Samsung Cloud Platform Hands-on Lab II - PaaS

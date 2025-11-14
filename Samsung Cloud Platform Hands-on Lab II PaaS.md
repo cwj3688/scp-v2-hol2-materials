@@ -155,7 +155,7 @@ Security Group 역시 기본적으로 모든 트래픽을 차단하며, 동일 �
   - 방향: `outbound`
   - 허용 포트: `사용자 지정 TCP`
   - 포트 범위: `6443` (6443은 K8s API 서버 통신용)
-  - 대상주소: `192.168.10.0/24`
+  - 대상주소: `0.0.0.0.0/24`
   - **용도:** VM에서 외부 Kubernetes API에 안전하게 접근하기 위한 규칙입니다.
   
 - Sample Web Application 테스트 포트
@@ -912,7 +912,7 @@ cd ~/AutoScaling-Test-WebApp
 - `-t` 옵션은 이미지의 이름과 태그(버전)를 지정합니다. 여기서는 `my-scaling-app:1.0`으로 지정합니다.
 - 명령어 마지막의 `.`은 Dockerfile이 위치한 현재 디렉터리를 의미합니다.
 ```bash
-docker build -t my-scaling-app:1.0 .
+docker build -t autoscaling-test-webapp:1.0 .
 ```
 - 빌드가 시작되면 Dockerfile에 정의된 각 단계(base image 다운로드, 종속성 설치, 소스코드 복사 등)가 순서대로 실행됩니다.
 
@@ -923,8 +923,8 @@ docker images
 ```
 - 목록에서 `my-scaling-app` 레포지토리와 `1.0` 태그를 가진 이미지가 정상적으로 생성되었는지 확인할 수 있습니다.
 ```
-REPOSITORY         TAG       IMAGE ID       CREATED          SIZE
-my-scaling-app     1.0       abcdef123456   10 seconds ago   1.15GB
+REPOSITORY                  TAG       IMAGE ID       CREATED          SIZE
+autoscaling-test-webapp     1.0       abcdef123456   10 seconds ago   1.15GB
 ```
 이제 이 컨테이너 이미지를 사용하여 애플리케이션을 실행하거나, 컨테이너 레지스트리에 푸시하여 다른 환경에 배포할 수 있습니다.
 
@@ -1136,15 +1136,10 @@ helm repo update
 
 결과
 ```
-
-
-
-
-
-
-
-
-
+"ingress-nginx" has been added to your repositories
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "ingress-nginx" chart repository
+Update Complete. ⎈Happy Helming!⎈
 ```
 
 ### 8.3.3 Subnet 및 Security Group ID 확인
@@ -1384,7 +1379,7 @@ ArgoCD를 사용하기 전에, Helm 명령어로 직접 애플리케이션을 �
 # values.yaml
 
 image:
-  repository: <SCP-Registry-URL>/web-app/my-app  # 수정
+  repository: cwj3688/autoscaling-test-webapp  # 수정
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest" # 또는 Jenkins에서 빌드한 태그로 수정
@@ -1397,23 +1392,11 @@ imagePullSecrets:
 ingress:
   enabled: true     # true로 수정
   className: "nginx"    # nginx로 수정
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # anotations 추가
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
   hosts:
-    - host: web-app.<LB-PUBLIC-NAT-IP>.sslip.io   # host 이름 수정
+    - host: app.<LB-PUBLIC-NAT-IP>.sslip.io   # host 이름 수정
       paths:
         - path: /
           pathType: ImplementationSpecific
-  tls:  # TLS 설정 수정
-  - secretName: web-app-tls-secret
-    hosts:
-      - web-app.<LB-PUBLIC-NAT-IP>.sslip.io
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
-
 ```
         
 #### 2. Helm으로 수동 배포
@@ -1431,26 +1414,7 @@ Pod가 정상적으로 실행되는지 확인합니다.
 kubectl get pods -n cicd
 ```
             
-웹 브라우저에서 `values.yaml`에 설정한 `host` 주소(`http://web-app.<LB-PUBLIC-NAT-IP>.sslip.io`)로 접속하여 "Hello, CI/CD World on SCP!" 메시지가 표시되는지 확인합니다.
-
-#### 4. 저장소에 push
-
-수정한 `values.yaml`을 GitOps 저장소에 Push 합니다. 
-        
-```
-cd my-app-chart
-git add values.yaml
-git commit -m "Update image, secret, and ingress settings"
-git push origin main
-
-```
-
-#### 5. **수동 배포된 릴리스 삭제**
-ArgoCD가 관리할 수 있도록, 테스트용으로 수동 배포했던 릴리스를 삭제합니다.
-            
-```bash
-helm uninstall my-web-app -n cicd
-```
+웹 브라우저에서 `values.yaml`에 설정한 `host` 주소(`http://app.<LB-PUBLIC-NAT-IP>.sslip.io`)로 접속하여 "Hello, CI/CD World on SCP!" 메시지가 표시되는지 확인합니다.
 
 ## 9.4 정리하기
 
@@ -1458,12 +1422,6 @@ helm uninstall my-web-app -n cicd
 - **GitOps 저장소 구성:** 애플리케이션 배포 상태를 정의하는 Helm 차트를 버전 관리하기 위한 별도의 GitOps 저장소를 생성하고 연동했습니다.
 - **수동 배포 검증:** `helm install` 명령어를 통해 클러스터에 애플리케이션을 직접 배포하고 접속하여, Helm 차트가 의도대로 동작하는지 검증하는 과정을 완료했습니다.
 - **ArgoCD 도입 준비:** 수동 배포 및 검증을 통해 GitOps 자동화 도구인 ArgoCD를 도입하기 위한 모든 준비를 마쳤습니다.
-
-
-
-
-
-
 
 
 
